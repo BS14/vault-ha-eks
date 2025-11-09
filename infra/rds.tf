@@ -24,24 +24,6 @@ resource "aws_security_group" "rds_sg" {
   })
 }
 
-# Generate a random password for the database
-resource "random_password" "db_password" {
-  length           = 16
-  special          = true
-  override_special = "!#$%&*()-_=+[]{}<>:?"
-}
-
-# Store the generated password in AWS SSM Parameter Store as a secret
-resource "aws_ssm_parameter" "db_password" {
-  name  = "/${var.project}/rds/master_password"
-  type  = "SecureString"
-  value = random_password.db_password.result
-
-  tags = merge(local.common_tags, {
-    "Name" = "${var.project}-rds-password"
-  })
-}
-
 # RDS instance
 module "rds" {
   source  = "terraform-aws-modules/rds/aws"
@@ -51,13 +33,13 @@ module "rds" {
 
   engine                 = "postgres"
   engine_version         = "17.6"
+  family                 = "postgres17"
   instance_class         = "db.t3.micro"
   allocated_storage      = 20
   storage_type           = "gp3"
   publicly_accessible    = false
   db_name                = var.db_name
   username               = var.db_username
-  password               = random_password.db_password.result
   vpc_security_group_ids = [aws_security_group.rds_sg.id]
   db_subnet_group_name   = aws_db_subnet_group.rds_subnet_group.name
   multi_az               = false # Set to true for production
@@ -65,7 +47,4 @@ module "rds" {
   tags = merge(local.common_tags, {
     "Name" = "${var.project}-rds-db"
   })
-  depends_on = [
-    aws_ssm_parameter.db_password
-  ]
 }

@@ -6,5 +6,3 @@ locals {
     Owner      = "Bnay14"
   }
 }
-
-

@@ -1,0 +1,55 @@
+injector:
+  enabled: false
+
+server:
+  extraSecretEnvironmentVars:
+    - envName: VAULT_PG_CONNECTION_URL
+      secretName: postgres-backend-connection-url
+      secretKey: VAULT_PG_CONNECTION_URL
+  extraEnvironmentVars:
+    VAULT_SEAL_TYPE: awskms
+    VAULT_AWSKMS_SEAL_KEY_ID: aaaa-bbbb-cccc-dddd
+  serviceAccount:
+    create: true
+    annotations: |
+      eks.amazonaws.com/role-arn: "arn:aws:iam::1234567890:role/vault-eks-vault-kms-role"
+  resources:
+    requests:
+      memory: 256Mi
+    limits:
+      memory: 356Mi
+  standalone:
+    enabled: false
+  dev:
+    enabled: false
+  ha:
+    enabled: true
+    replicas: 3
+    config: |
+      ui = true
+    
+      storage "postgresql" {
+        connection_url="{{`{{env \"VAULT_PG_CONNECTION_URL\"}}`}}"
+        table="vault_kv_store",
+        ha_enabled=true,
+        ha_table="vault_ha_locks"
+      }
+
+      listener "tcp" {
+        address = "[::]:8200"
+        cluster_address = "[::]:8201"
+        tls_disable = 1
+      }
+
+      seal "awskms" {
+        region = "us-east-1"
+        kms_key_id = "aaaa-bbbb-cccc-dddd"
+      }
+
+      service_registration "kubernetes" {}
+  dataStorage:
+    enabled: false
+
+ui:
+  enabled: true
+  serviceType: "ClusterIP"

@@ -11,7 +11,10 @@ output "rds_endpoint" {
   value       = module.rds.db_instance_address
 }
 
-output "rds_password_ssm_parameter_name" {
-  description = "The name of the SSM Parameter Store parameter for the DB password"
-  value       = aws_ssm_parameter.db_password.name
+output "unsesal_kms_role" {
+  value = aws_iam_role.role_vault_kms.arn
+}
+
+output "db_instance_master_user_secret_arn" {
+  value = module.rds.db_instance_master_user_secret_arn
 }

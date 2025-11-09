@@ -7,7 +7,28 @@ module "kms" {
   rotation_period_in_days = 90
 }
 
-# IRSA Role for vault for accessing kms keys.
+# Pod-identity.
+
+data "aws_iam_policy_document" "assume_role" {
+  statement {
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["pods.eks.amazonaws.com"]
+    }
+
+    actions = [
+      "sts:AssumeRole",
+      "sts:TagSession"
+    ]
+  }
+}
+
+resource "aws_iam_role" "role_vault_kms" {
+  name               = "${module.eks.cluster_name}-vault-kms-role"
+  assume_role_policy = data.aws_iam_policy_document.assume_role.json
+}
 
 # Define the IAM policy document for KMS permissions
 data "aws_iam_policy_document" "vault_kms" {
@@ -29,27 +50,20 @@ data "aws_iam_policy_document" "vault_kms" {
 }
 
 # Create the IAM policy from the document
-resource "aws_iam_policy" "vault_kms" {
-  name        = "${module.eks.cluster_name}-vault-kms"
-  description = "Allows Vault to use the KMS key for auto-unseal"
+resource "aws_iam_policy" "policy_vault_kms" {
+  name        = "${module.eks.cluster_name}-vault-kms-policy"
+  description = "Allows Vault to use the KMS key for auto-unseal."
   policy      = data.aws_iam_policy_document.vault_kms.json
 }
 
-# Use the module to create the IRSA role
-module "vault_irsa_role" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts"
-  version = "6.2.3"
+resource "aws_iam_role_policy_attachment" "attach_kms_policy" {
+  policy_arn = aws_iam_policy.policy_vault_kms.arn
+  role       = aws_iam_role.role_vault_kms.name
+}
 
-  role_name = "${module.eks.cluster_name}-vault-kms-role"
-
-  policy_arns_to_attach = [
-    aws_iam_policy.vault_kms.arn
-  ]
-
-  oidc_provider_arn = module.eks.oidc_provider_arn
-
-  service_accounts = [
-    "${var.vault_namespace}:${var.vault_service_account_name}"
-  ]
-  depends_on = [module.eks, module.kms]
+resource "aws_eks_pod_identity_association" "kms_pod_identity_association" {
+  cluster_name    = module.eks.cluster_name
+  namespace       = var.vault_namespace
+  service_account = var.vault_service_account_name
+  role_arn        = aws_iam_role.role_vault_kms.arn
 }

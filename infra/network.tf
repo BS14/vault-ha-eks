@@ -9,12 +9,12 @@ module "vpc" {
 
 
   # Subnetting: /24 subnets within /16 VPC (cleaner separation)
-  public_subnets  = [for i in range(3) : cidrsubnet(local.vpc_cidr, 8, i)]
-  private_subnets = [for i in range(3) : cidrsubnet(local.vpc_cidr, 8, i + 10)]
-  database_subnets = [for i in range(3): cidrsubnet(local.vpc_cidr, 8, i + 20)]
+  public_subnets   = [for i in range(3) : cidrsubnet(local.vpc_cidr, 8, i)]
+  private_subnets  = [for i in range(3) : cidrsubnet(local.vpc_cidr, 8, i + 10)]
+  database_subnets = [for i in range(3) : cidrsubnet(local.vpc_cidr, 8, i + 20)]
 
-  enable_nat_gateway = true
-  single_nat_gateway = true
+  enable_nat_gateway   = true
+  single_nat_gateway   = true
   enable_dns_hostnames = true
   enable_dns_support   = true
 
@@ -25,7 +25,7 @@ module "vpc" {
   private_subnet_tags = {
     "kubernetes.io/role/internal-elb" = 1
   }
-  
+
   database_subnet_tags = {
     "Tier" = "database"
   }

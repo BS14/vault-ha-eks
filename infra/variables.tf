@@ -19,7 +19,7 @@ variable "vault_namespace" {
 variable "vault_service_account_name" {
   description = "Service Account to be used by Vault."
   type        = string
-  default     = "vault-sa"
+  default     = "demo-vault"
 }
 
 variable "db_name" {
@@ -31,5 +31,5 @@ variable "db_name" {
 variable "db_username" {
   description = "The master username for the database."
   type        = string
-  default     = "admin"
+  default     = "administrator"
 }
