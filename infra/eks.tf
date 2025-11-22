@@ -8,7 +8,7 @@ module "eks" {
   control_plane_subnet_ids                 = module.vpc.private_subnets
   endpoint_public_access                   = true
   enable_cluster_creator_admin_permissions = true
-  endpoint_public_access_cidrs             = ["27.34.64.210/32"]
+  endpoint_public_access_cidrs             = ["XX.XX.XX.XX/XX"] #Change this to your endpoint. Ideally for prod create bastion. This is suitable only for demo.
   enabled_log_types                        = []
   eks_managed_node_groups = {
     compute = {
